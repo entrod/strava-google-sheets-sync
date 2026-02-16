@@ -1,1 +1,190 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        max-width: 500px;
+      }
+
+      h2 {
+        color: #FC4C02;
+        margin-bottom: 10px;
+      }
+
+      .step {
+        background: #f5f5f5;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 5px;
+        border-left: 4px solid #FC4C02;
+      }
+
+      .step h3 {
+        margin-top: 0;
+        color: #333;
+      }
+
+      input[type="text"] {
+        width: 100%;
+        padding: 8px;
+        margin: 5px 0;
+        box-sizing: border-box;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+
+      button {
+        background-color: #FC4C02;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-top: 10px;
+      }
+
+      button:hover {
+        background-color: #e34402;
+      }
+
+      .success {
+        color: green;
+        font-weight: bold;
+      }
+
+      .error {
+        color: red;
+        font-weight: bold;
+      }
+
+      .url-box {
+        background: #fff;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        word-break: break-all;
+        font-size: 12px;
+        margin: 10px 0;
+      }
+
+      a {
+        color: #FC4C02;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Strava Setup Guide</h2>
+
+    <div class="step">
+      <h3>Steg 1: Skaffa API-credentials</h3>
+      <p>
+        Gå till
+        <a href="https://www.strava.com/settings/api" target="_blank">
+          Strava API Settings
+        </a>
+      </p>
+      <p>Skapa en app om du inte redan har en. Sätt:</p>
+      <ul>
+        <li><strong>Authorization Callback Domain:</strong> localhost</li>
+      </ul>
+      <p>Kopiera din <strong>Client ID</strong> och <strong>Client Secret</strong>.</p>
+    </div>
+
+    <div class="step">
+      <h3>Steg 2: Fyll i credentials</h3>
+
+      <label>Client ID:</label>
+      <input type="text" id="clientId" placeholder="12345">
+
+      <label>Client Secret:</label>
+      <input type="text" id="clientSecret" placeholder="abc123...">
+
+      <button onclick="generateAuthUrl()">Generera auktoriseringslänk</button>
+
+      <div id="authUrlSection" style="display:none; margin-top:15px;">
+        <p><strong>Klicka på denna länk för att auktorisera:</strong></p>
+        <div class="url-box">
+          <a id="authUrl" href="#" target="_blank">
+            Länk genereras här...
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <h3>Steg 3: Hämta authorization code</h3>
+      <p>
+        Efter att du klickat på länken ovan och godkänt appen:
+      </p>
+      <ol>
+        <li>Du skickas till en sida som inte laddar (det är normalt)</li>
+        <li>Titta i URL-fältet</li>
+        <li>Kopiera koden efter <code>code=</code></li>
+      </ol>
+
+      <label>Authorization Code:</label>
+      <input type="text" id="authCode" placeholder="abc123def456...">
+
+      <button onclick="saveCredentials()">Spara och aktivera Strava</button>
+
+      <div id="result" style="margin-top: 15px;"></div>
+    </div>
+
+    <script>
+      function generateAuthUrl() {
+        const clientId = document.getElementById('clientId').value;
+
+        if (!clientId) {
+          alert('Fyll i Client ID först!');
+          return;
+        }
+
+        const url =
+          'https://www.strava.com/oauth/authorize' +
+          '?client_id=' + clientId +
+          '&response_type=code' +
+          '&redirect_uri=http://localhost' +
+          '&approval_prompt=force' +
+          '&scope=activity:read_all';
+
+        document.getElementById('authUrl').href = url;
+        document.getElementById('authUrl').textContent = url;
+        document.getElementById('authUrlSection').style.display = 'block';
+      }
+
+      function saveCredentials() {
+        const clientId = document.getElementById('clientId').value;
+        const clientSecret = document.getElementById('clientSecret').value;
+        const authCode = document.getElementById('authCode').value;
+
+        if (!clientId || !clientSecret || !authCode) {
+          alert('Fyll i alla fält!');
+          return;
+        }
+
+        document.getElementById('result').innerHTML = '<p>Sparar...</p>';
+
+        google.script.run
+          .withSuccessHandler(onSuccess)
+          .withFailureHandler(onFailure)
+          .setupStravaFromDialog(clientId, clientSecret, authCode);
+      }
+
+      function onSuccess(message) {
+        document.getElementById('result').innerHTML =
+          '<p class="success">✓ ' + message + '</p>' +
+          '<p>Du kan nu stänga detta fönster och köra import.</p>';
+      }
+
+      function onFailure(error) {
+        document.getElementById('result').innerHTML =
+          '<p class="error">✗ Fel: ' + error.message + '</p>';
+      }
+    </script>
+  </body>
+</html>
 
